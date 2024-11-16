@@ -2,6 +2,14 @@
 
 import React, { useState, useCallback } from 'react';
 
+// Declare SpeechRecognition type
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
+}
+
 const AIComponent: React.FC = () => {
   const [circleSize, setCircleSize] = useState(100);
   const [userInput, setUserInput] = useState('');
@@ -43,8 +51,7 @@ const AIComponent: React.FC = () => {
 
   const startListening = useCallback(() => {
     const SpeechRecognition =
-      (window as unknown as { SpeechRecognition: typeof SpeechRecognition; webkitSpeechRecognition: typeof SpeechRecognition }).SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition: typeof SpeechRecognition }).webkitSpeechRecognition;
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
