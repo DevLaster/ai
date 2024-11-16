@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 
 const AIComponent: React.FC = () => {
   const [circleSize, setCircleSize] = useState(100);
@@ -13,22 +13,17 @@ const AIComponent: React.FC = () => {
       return 'سلام , عشقم چطوری خوبی؟ روزت چطور بود عشقم';
     } else if (query.toLowerCase().includes('چطوری')) {
       return 'روز من خیلی خوب بوده، ممنون که پرسیدی!';
-    } else if (query.toLowerCase().includes('ریدم')) {
-      return 'نرین عشقم, برین دهن بدخواهات ';
-    } else if (query.toLowerCase().includes('خداحافظ')) {
-      return 'خداحافظ! روز خوبی داشته باشید!';
     } else {
       return 'ببخشید عشقم متوجه حرفت نشدم میشه دوباره بگی فدات بشم؟';
     }
   };
 
-  const speakResponse = (response: string) => {
+  const speakResponse = useCallback((response: string) => {
     if (window.speechSynthesis) {
       const utterance = new SpeechSynthesisUtterance(response);
       utterance.lang = 'fa-IR';
-      utterance.voice = window.speechSynthesis
-        .getVoices()
-        .find((voice) => voice.lang === 'fa-IR') || null;
+      utterance.voice =
+        window.speechSynthesis.getVoices().find((voice) => voice.lang === 'fa-IR') || null;
 
       utterance.onend = () => {
         setTimeout(() => {
@@ -44,11 +39,12 @@ const AIComponent: React.FC = () => {
     } else {
       console.error('SpeechSynthesis is not supported in this browser.');
     }
-  };
+  }, [isSpeaking]);
 
   const startListening = useCallback(() => {
     const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      (window as unknown as { SpeechRecognition: typeof SpeechRecognition; webkitSpeechRecognition: typeof SpeechRecognition }).SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition: typeof SpeechRecognition }).webkitSpeechRecognition;
 
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
@@ -80,39 +76,15 @@ const AIComponent: React.FC = () => {
     } else {
       console.error('SpeechRecognition is not supported in this browser.');
     }
-  }, [isSpeaking]);
-
-  useEffect(() => {
-    startListening();
-  }, [startListening]);
+  }, [speakResponse]);
 
   return (
-    <div style={styles.body}>
-      <div style={{ ...styles.circle, width: circleSize, height: circleSize }}></div>
+    <div>
+      <div style={{ width: circleSize, height: circleSize, borderRadius: '50%', backgroundColor: 'white' }}></div>
       <p>User Input: {userInput}</p>
       <p>AI Response: {aiResponse}</p>
     </div>
   );
 };
 
-const styles = {
-  body: {
-    backgroundColor: 'black',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100vh',
-    margin: 0,
-    flexDirection: 'row',
-    position: 'relative',
-  },
-  circle: {
-    borderRadius: '50%',
-    backgroundColor: 'white',
-    display: 'inline-block',
-    margin: '10px',
-    transition: 'width 0.3s, height 0.3s, transform 0.5s ease-in-out',
-    animation: 'pulse 1s infinite',
-  },
-};
 export default AIComponent;
