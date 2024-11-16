@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const AIComponent: React.FC = () => {
   const [circleSize, setCircleSize] = useState(100);
@@ -8,7 +8,6 @@ const AIComponent: React.FC = () => {
   const [aiResponse, setAiResponse] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
 
- 
   const getResponse = (query: string) => {
     if (query.toLowerCase().includes('سلام') || query.toLowerCase().includes('هی')) {
       return 'سلام , عشقم چطوری خوبی؟ روزت چطور بود عشقم';
@@ -23,78 +22,75 @@ const AIComponent: React.FC = () => {
     }
   };
 
- 
   const speakResponse = (response: string) => {
     if (window.speechSynthesis) {
       const utterance = new SpeechSynthesisUtterance(response);
-      utterance.lang = 'fa-IR'; 
-      utterance.voice = window.speechSynthesis.getVoices().find((voice: any) => voice.lang === 'fa-IR') || null;
+      utterance.lang = 'fa-IR';
+      utterance.voice = window.speechSynthesis
+        .getVoices()
+        .find((voice) => voice.lang === 'fa-IR') || null;
 
-      
       utterance.onend = () => {
         setTimeout(() => {
           setIsSpeaking(false);
-          startListening(); 
+          startListening();
         }, 100);
       };
 
-     
       if (!isSpeaking) {
         window.speechSynthesis.speak(utterance);
         setIsSpeaking(true);
       }
     } else {
-      console.error("SpeechSynthesis is not supported in this browser.");
+      console.error('SpeechSynthesis is not supported in this browser.');
     }
   };
 
- 
-  const startListening = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-  
+  const startListening = useCallback(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.lang = 'fa-IR';
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
-  
-      recognition.onresult = async (event: any) => {
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript;
         setUserInput(transcript);
-        
-        // بررسی کلمه "youtube"
-        if (transcript.toLowerCase().includes("youtube")) {
-          window.open("https://www.youtube.com", "_blank");
+
+        if (transcript.toLowerCase().includes('youtube')) {
+          window.open('https://www.youtube.com', '_blank');
           return;
         }
-        
+
         const response = getResponse(transcript);
         setAiResponse(response);
         speakResponse(response);
         setCircleSize(150);
         setTimeout(() => setCircleSize(100), 1000);
       };
-  
-      recognition.onerror = (event: any) => {
-        console.error("Error occurred in speech recognition: ", event.error);
+
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        console.error('Error occurred in speech recognition: ', event.error);
       };
-  
+
       recognition.start();
     } else {
-      console.error("SpeechRecognition is not supported in this browser.");
+      console.error('SpeechRecognition is not supported in this browser.');
     }
-  };
+  }, [isSpeaking]);
 
   useEffect(() => {
-    startListening(); 
-  }, []);
+    startListening();
+  }, [startListening]);
 
   return (
     <div style={styles.body}>
       <div style={{ ...styles.circle, width: circleSize, height: circleSize }}></div>
-      <div style={{ ...styles.circle, width: circleSize, height: circleSize }}></div>
-      <div style={{ ...styles.circle, width: circleSize, height: circleSize }}></div>
-      <div style={{ ...styles.circle, width: circleSize, height: circleSize }}></div>
+      <p>User Input: {userInput}</p>
+      <p>AI Response: {aiResponse}</p>
     </div>
   );
 };
@@ -119,23 +115,4 @@ const styles = {
     animation: 'pulse 1s infinite',
   },
 };
-
-
-const keyframes = `
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-  }
-}`;
-
-const styleElement = document.createElement('style');
-styleElement.innerHTML = keyframes;
-document.head.appendChild(styleElement);
-
 export default AIComponent;
